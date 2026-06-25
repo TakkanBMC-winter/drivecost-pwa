@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f5f7">
+  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="DriveCost">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-512.png">
+  <link rel="icon" href="./icon-512.png">
+  <title>DriveCost 交通費計算</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f5f7;
+      --panel: #ffffff;
+      --panel-2: #f9fafb;
+      --text: #111827;
+      --muted: #687385;
+      --line: #d9dde5;
+      --accent: #0a84ff;
+      --green: #27864f;
+      --orange: #bf6a02;
+      --danger: #d92d20;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      --radius: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1115;
+        --panel: #1b1f27;
+        --panel-2: #141820;
+        --text: #f4f5f7;
+        --muted: #a4adbb;
+        --line: #343b49;
+        --accent: #66aaff;
+        --green: #67c587;
+        --orange: #f0a245;
+        --danger: #ff6b61;
+        --shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(760px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(96px, env(safe-area-inset-bottom));
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      margin: -16px -16px 16px;
+      padding: max(16px, env(safe-area-inset-top)) 16px 12px;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 68%, transparent);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.55rem, 7vw, 2.2rem);
+      letter-spacing: 0;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .tab-button,
+    .primary-button,
+    .secondary-button,
+    .danger-button,
+    .icon-button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .tab-button[aria-selected="true"],
+    .primary-button {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .danger-button {
+      border-color: color-mix(in srgb, var(--danger) 42%, var(--line));
+      color: var(--danger);
+    }
+
+    .secondary-button {
+      color: var(--accent);
+    }
+
+    main > section {
+      display: none;
+    }
+
+    main > section.active {
+      display: block;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .result-card,
+    fieldset,
+    .settings-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .result-card {
+      min-height: 92px;
+      padding: 14px;
+    }
+
+    .result-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .result-amount {
+      margin: 4px 0 0;
+      font-size: clamp(1.38rem, 6vw, 2.15rem);
+      font-weight: 800;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .result-card.total .result-amount {
+      color: var(--accent);
+    }
+
+    .result-card.driver .result-amount {
+      color: var(--green);
+    }
+
+    .result-card.passenger .result-amount {
+      color: var(--orange);
+    }
+
+    fieldset {
+      margin: 0 0 14px;
+      padding: 16px;
+    }
+
+    legend {
+      padding: 0 6px;
+      font-weight: 800;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: minmax(96px, 1fr) minmax(0, 1.4fr);
+      align-items: center;
+      gap: 12px;
+      min-height: 52px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .field:last-child {
+      border-bottom: 0;
+    }
+
+    .field label,
+    .field .label {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 8px 10px;
+    }
+
+    input[readonly] {
+      color: var(--muted);
+    }
+
+    input[type="checkbox"] {
+      width: 26px;
+      min-height: 26px;
+      accent-color: var(--accent);
+    }
+
+    input[type="range"] {
+      padding: 0;
+      accent-color: var(--accent);
+    }
+
+    .unit {
+      min-width: max-content;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .stepper {
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .stepper output {
+      min-height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      font-weight: 800;
+    }
+
+    .status {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .settings-card {
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .settings-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .actions button,
+    .icon-button {
+      padding: 8px 12px;
+    }
+
+    .empty {
+      margin: 20px 0;
+      padding: 22px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    dialog {
+      width: min(480px, calc(100% - 28px));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0;
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    .dialog-body {
+      padding: 18px;
+    }
+
+    .dialog-body h2 {
+      margin: 0 0 14px;
+      font-size: 1.3rem;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .wide-action {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .compact-note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      header {
+        margin-left: -12px;
+        margin-right: -12px;
+      }
+
+      .field {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 10px 0;
+      }
+
+      .tabs {
+        gap: 6px;
+      }
+
+      .tab-button {
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>交通費計算</h1>
+      <nav class="tabs" aria-label="画面切り替え">
+        <button class="tab-button" type="button" data-tab="home" aria-selected="true">ホーム</button>
+        <button class="tab-button" type="button" data-tab="settings" aria-selected="false">設定</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="home" class="active">
+        <div class="results" aria-live="polite">
+          <article class="result-card total">
+            <p class="result-title">総交通費</p>
+            <p class="result-amount" id="totalCost">0円</p>
+          </article>
+          <article class="result-card">
+            <p class="result-title">通常一人</p>
+            <p class="result-amount" id="normalCost">0円</p>
+          </article>
+          <article class="result-card driver">
+            <p class="result-title">運転手</p>
+            <p class="result-amount" id="driverCost">0円</p>
+          </article>
+          <article class="result-card passenger">
+            <p class="result-title">同乗者</p>
+            <p class="result-amount" id="passengerCost">0円</p>
+          </article>
+        </div>
+
+        <fieldset>
+          <legend>燃料</legend>
+          <div class="field">
+            <label for="fuelEconomy">燃費</label>
+            <div class="control-row">
+              <input id="fuelEconomy" type="number" min="0" step="0.1" inputmode="decimal">
+              <span class="unit">km/L</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fuelType">燃料種類</label>
+            <select id="fuelType">
+              <option value="regular">レギュラー</option>
+              <option value="diesel">軽油</option>
+              <option value="premium">ハイオク</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="label">北海道平均価格取得</span>
+            <input id="useAveragePrice" type="checkbox">
+          </div>
+          <div class="field">
+            <label for="fuelPrice">燃料代</label>
+            <div class="control-row">
+              <input id="fuelPrice" type="number" min="0" step="0.1" inputmode="decimal">
+              <span class="unit">円/L</span>
+            </div>
+          </div>
+          <p class="status" id="priceStatus"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>距離と料金</legend>
+          <div class="field">
+            <label for="distance">片道距離</label>
+            <div class="control-row">
+              <input id="distance" type="number" min="0" step="0.1" inputmode="decimal">
+              <span class="unit">km</span>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">往復計算</span>
+            <input id="roundTrip" type="checkbox">
+          </div>
+          <div class="field">
+            <label for="highwayFee">高速料金</label>
+            <div class="control-row">
+              <input id="highwayFee" type="number" min="0" step="1" inputmode="numeric">
+              <span class="unit">円</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>割り勘項目</legend>
+          <div id="splitCostFields"></div>
+          <p class="status">表示する項目は設定画面で選択できます。</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>人数と調整</legend>
+          <div class="field">
+            <span class="label">人数</span>
+            <div class="stepper">
+              <button class="icon-button" type="button" id="peopleMinus" aria-label="人数を減らす">−</button>
+              <output id="peopleOutput">2人</output>
+              <button class="icon-button" type="button" id="peoplePlus" aria-label="人数を増やす">＋</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="driverDiscount">運転手調整</label>
+            <div>
+              <input id="driverDiscount" type="range" min="0" max="30" step="5">
+              <p class="status" id="driverDiscountLabel">10%</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="rounding">切り上げ</label>
+            <select id="rounding">
+              <option value="none">なし</option>
+              <option value="ten">10円</option>
+              <option value="hundred">100円</option>
+            </select>
+          </div>
+        </fieldset>
+      </section>
+
+      <section id="settings">
+        <article class="settings-card">
+          <h2 class="settings-title">割り勘項目</h2>
+          <p class="compact-note">ホーム画面に表示して、総交通費に加算する項目を選びます。</p>
+          <div id="splitCostSettings"></div>
+        </article>
+
+        <article class="settings-card">
+          <div class="field">
+            <span class="label">北海道平均価格</span>
+            <span id="averagePriceSummary"></span>
+          </div>
+          <div class="field">
+            <span class="label">ダークモード</span>
+            <span>端末設定に自動追従</span>
+          </div>
+          <div class="field">
+            <span class="label">バージョン</span>
+            <span>PWA版 1.2</span>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const storageKey = "driveCostHtmlState";
+    const splitCostItems = [
+      { id: "lodging", label: "宿代" },
+      { id: "food", label: "食料費" },
+      { id: "transportation", label: "交通費" },
+      { id: "parking", label: "駐車場代" },
+      { id: "other", label: "その他" }
+    ];
+    const hokkaidoAveragePrice = {
+      regular: 174,
+      diesel: 154,
+      premium: 185,
+      updatedAt: new Date().toISOString()
+    };
+
+    const defaultState = {
+      fuelEconomy: 15,
+      fuelType: "regular",
+      useAveragePrice: false,
+      fuelPrice: 174,
+      distance: 50,
+      roundTrip: true,
+      highwayFee: 0,
+      enabledSplitCostItems: [],
+      splitCosts: {
+        lodging: 0,
+        food: 0,
+        transportation: 0,
+        parking: 0,
+        other: 0
+      },
+      people: 2,
+      driverDiscount: 10,
+      rounding: "none"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    let state = loadState();
+
+    const controls = {
+      fuelEconomy: $("fuelEconomy"),
+      fuelType: $("fuelType"),
+      useAveragePrice: $("useAveragePrice"),
+      fuelPrice: $("fuelPrice"),
+      distance: $("distance"),
+      roundTrip: $("roundTrip"),
+      highwayFee: $("highwayFee"),
+      driverDiscount: $("driverDiscount"),
+      rounding: $("rounding")
+    };
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        return normalizeState({ ...defaultState, ...saved });
+      } catch {
+        return normalizeState({ ...defaultState });
+      }
+    }
+
+    function normalizeState(value) {
+      return {
+        ...value,
+        enabledSplitCostItems: Array.isArray(value.enabledSplitCostItems)
+          ? value.enabledSplitCostItems.filter((id) => splitCostItems.some((item) => item.id === id))
+          : [],
+        splitCosts: {
+          ...defaultState.splitCosts,
+          ...(value.splitCosts || {})
+        }
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function yen(value) {
+      return `${Math.max(0, Math.round(value)).toLocaleString("ja-JP")}円`;
+    }
+
+    function numberValue(value, fallback = 0) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function roundUp(value) {
+      if (state.rounding === "ten") {
+        return Math.ceil(value / 10) * 10;
+      }
+      if (state.rounding === "hundred") {
+        return Math.ceil(value / 100) * 100;
+      }
+      return Math.round(value);
+    }
+
+    function calculate() {
+      const totalDistance = Math.max(state.distance, 0) * (state.roundTrip ? 2 : 1);
+      const fuelEconomy = Math.max(state.fuelEconomy, 0.1);
+      const people = Math.max(state.people, 1);
+      const fuelCost = totalDistance / fuelEconomy * Math.max(state.fuelPrice, 0);
+      const splitCostTotal = state.enabledSplitCostItems.reduce((sum, id) => {
+        return sum + Math.max(numberValue(state.splitCosts[id]), 0);
+      }, 0);
+      const totalCost = Math.max(fuelCost + Math.max(state.highwayFee, 0) + splitCostTotal, 0);
+      const normalCost = totalCost / people;
+
+      if (people === 1) {
+        const total = roundUp(totalCost);
+        return { totalCost: total, normalCost: total, driverCost: total, passengerCost: 0 };
+      }
+
+      const driverCost = normalCost * (1 - state.driverDiscount / 100);
+      const passengerCost = (totalCost - driverCost) / (people - 1);
+      return {
+        totalCost: roundUp(totalCost),
+        normalCost: roundUp(normalCost),
+        driverCost: roundUp(driverCost),
+        passengerCost: roundUp(passengerCost)
+      };
+    }
+
+    function syncAveragePrice() {
+      if (!state.useAveragePrice) {
+        return;
+      }
+      state.fuelPrice = hokkaidoAveragePrice[state.fuelType];
+    }
+
+    function render() {
+      syncAveragePrice();
+      saveState();
+      renderInputs();
+      renderResults();
+      renderSettings();
+    }
+
+    function renderInputs() {
+      controls.fuelEconomy.value = state.fuelEconomy;
+      controls.fuelType.value = state.fuelType;
+      controls.useAveragePrice.checked = state.useAveragePrice;
+      controls.fuelPrice.value = state.fuelPrice;
+      controls.fuelPrice.readOnly = state.useAveragePrice;
+      controls.distance.value = state.distance;
+      controls.roundTrip.checked = state.roundTrip;
+      controls.highwayFee.value = state.highwayFee;
+      controls.driverDiscount.value = state.driverDiscount;
+      controls.rounding.value = state.rounding;
+      $("peopleOutput").textContent = `${state.people}人`;
+      $("driverDiscountLabel").textContent = `${state.driverDiscount}%`;
+
+      $("priceStatus").textContent = state.useAveragePrice
+        ? "北海道平均価格を使用中"
+        : "";
+
+      renderSplitCostFields();
+    }
+
+    function renderSplitCostFields() {
+      const container = $("splitCostFields");
+      if (state.enabledSplitCostItems.length === 0) {
+        container.innerHTML = `<div class="empty">追加の割り勘項目はありません。</div>`;
+        return;
+      }
+
+      container.innerHTML = state.enabledSplitCostItems.map((id) => {
+        const item = splitCostItems.find((candidate) => candidate.id === id);
+        if (!item) {
+          return "";
+        }
+        const value = numberValue(state.splitCosts[id]);
+        return `
+          <div class="field">
+            <label for="splitCost-${item.id}">${item.label}</label>
+            <div class="control-row">
+              <input id="splitCost-${item.id}" type="number" min="0" step="1" inputmode="numeric" value="${value}" data-split-cost="${item.id}">
+              <span class="unit">円</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderResults() {
+      const result = calculate();
+      $("totalCost").textContent = yen(result.totalCost);
+      $("normalCost").textContent = yen(result.normalCost);
+      $("driverCost").textContent = yen(result.driverCost);
+      $("passengerCost").textContent = yen(result.passengerCost);
+    }
+
+    function renderSettings() {
+      $("averagePriceSummary").textContent = `レギュラー ${hokkaidoAveragePrice.regular}円 / 軽油 ${hokkaidoAveragePrice.diesel}円 / ハイオク ${hokkaidoAveragePrice.premium}円`;
+      $("splitCostSettings").innerHTML = splitCostItems.map((item) => `
+        <div class="field">
+          <label for="splitSetting-${item.id}">${item.label}</label>
+          <input id="splitSetting-${item.id}" type="checkbox" data-split-setting="${item.id}" ${state.enabledSplitCostItems.includes(item.id) ? "checked" : ""}>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    Object.entries(controls).forEach(([key, control]) => {
+      control.addEventListener("input", () => {
+        if (key === "fuelEconomy" || key === "fuelPrice" || key === "distance" || key === "highwayFee" || key === "driverDiscount") {
+          state[key] = numberValue(control.value);
+        } else if (key === "fuelType") {
+          state.fuelType = control.value;
+          syncAveragePrice();
+        } else if (key === "useAveragePrice" || key === "roundTrip") {
+          state[key] = control.checked;
+          syncAveragePrice();
+        } else {
+          state[key] = control.value;
+        }
+        render();
+      });
+    });
+
+    $("splitCostFields").addEventListener("input", (event) => {
+      const input = event.target.closest("[data-split-cost]");
+      if (!input) {
+        return;
+      }
+      state.splitCosts[input.dataset.splitCost] = numberValue(input.value);
+      saveState();
+      renderResults();
+    });
+
+    $("splitCostSettings").addEventListener("change", (event) => {
+      const checkbox = event.target.closest("[data-split-setting]");
+      if (!checkbox) {
+        return;
+      }
+
+      const id = checkbox.dataset.splitSetting;
+      if (checkbox.checked && !state.enabledSplitCostItems.includes(id)) {
+        state.enabledSplitCostItems.push(id);
+      }
+      if (!checkbox.checked) {
+        state.enabledSplitCostItems = state.enabledSplitCostItems.filter((item) => item !== id);
+      }
+      render();
+    });
+
+    document.querySelectorAll(".tab-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-button").forEach((item) => item.setAttribute("aria-selected", "false"));
+        document.querySelectorAll("main > section").forEach((section) => section.classList.remove("active"));
+        button.setAttribute("aria-selected", "true");
+        $(button.dataset.tab).classList.add("active");
+      });
+    });
+
+    $("peopleMinus").addEventListener("click", () => {
+      state.people = Math.max(1, state.people - 1);
+      render();
+    });
+
+    $("peoplePlus").addEventListener("click", () => {
+      state.people = Math.min(20, state.people + 1);
+      render();
+    });
+
+    render();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
