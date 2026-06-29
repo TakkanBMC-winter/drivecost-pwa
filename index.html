@@ -486,7 +486,7 @@
         </div>
 
         <fieldset>
-          <legend>場所</legend>
+          <legend>場所・距離・料金</legend>
           <div class="place-grid">
             <div class="field">
               <label for="startPlace">出発地</label>
@@ -495,6 +495,24 @@
             <div class="field">
               <label for="destinationPlace">目的地</label>
               <input id="destinationPlace" autocomplete="off" placeholder="例：旭川">
+            </div>
+          </div>
+          <div class="field">
+            <label for="distance">片道距離</label>
+            <div class="control-row">
+              <input id="distance" type="number" min="0" step="0.1" inputmode="decimal">
+              <span class="unit">km</span>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">往復計算</span>
+            <input id="roundTrip" type="checkbox">
+          </div>
+          <div class="field">
+            <label for="highwayFee">高速料金</label>
+            <div class="control-row">
+              <input id="highwayFee" type="number" min="0" step="1" inputmode="numeric">
+              <span class="unit">円</span>
             </div>
           </div>
           <button class="secondary-button wide-action" type="button" id="saveHistory">履歴に保存</button>
@@ -529,28 +547,6 @@
             </div>
           </div>
           <p class="status" id="priceStatus"></p>
-        </fieldset>
-
-        <fieldset>
-          <legend>距離と料金</legend>
-          <div class="field">
-            <label for="distance">片道距離</label>
-            <div class="control-row">
-              <input id="distance" type="number" min="0" step="0.1" inputmode="decimal">
-              <span class="unit">km</span>
-            </div>
-          </div>
-          <div class="field">
-            <span class="label">往復計算</span>
-            <input id="roundTrip" type="checkbox">
-          </div>
-          <div class="field">
-            <label for="highwayFee">高速料金</label>
-            <div class="control-row">
-              <input id="highwayFee" type="number" min="0" step="1" inputmode="numeric">
-              <span class="unit">円</span>
-            </div>
-          </div>
         </fieldset>
 
         <fieldset>
@@ -612,7 +608,7 @@
           </div>
           <div class="field">
             <span class="label">バージョン</span>
-            <span>PWA版 1.5</span>
+            <span>PWA版 1.6</span>
           </div>
         </article>
       </section>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "drivecost-pwa-v6";
+const CACHE_NAME = "drivecost-pwa-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
