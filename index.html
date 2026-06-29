@@ -92,7 +92,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
 
@@ -224,6 +224,20 @@
     .field .label {
       color: var(--text);
       font-weight: 700;
+    }
+
+    .place-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .place-grid .field {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      min-height: 0;
+      border-bottom: 0;
     }
 
     .control-row {
@@ -416,6 +430,15 @@
         padding: 10px 0;
       }
 
+      .place-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .place-grid .field {
+        border-bottom: 1px solid var(--line);
+      }
+
       .tabs {
         gap: 6px;
       }
@@ -432,6 +455,7 @@
       <h1>交通費計算</h1>
       <nav class="tabs" aria-label="画面切り替え">
         <button class="tab-button" type="button" data-tab="home" aria-selected="true">ホーム</button>
+        <button class="tab-button" type="button" data-tab="history" aria-selected="false">履歴</button>
         <button class="tab-button" type="button" data-tab="settings" aria-selected="false">設定</button>
       </nav>
     </header>
@@ -463,13 +487,15 @@
 
         <fieldset>
           <legend>場所</legend>
-          <div class="field">
-            <label for="startPlace">出発地</label>
-            <input id="startPlace" autocomplete="off" placeholder="例：札幌">
-          </div>
-          <div class="field">
-            <label for="destinationPlace">目的地</label>
-            <input id="destinationPlace" autocomplete="off" placeholder="例：旭川">
+          <div class="place-grid">
+            <div class="field">
+              <label for="startPlace">出発地</label>
+              <input id="startPlace" autocomplete="off" placeholder="例：札幌">
+            </div>
+            <div class="field">
+              <label for="destinationPlace">目的地</label>
+              <input id="destinationPlace" autocomplete="off" placeholder="例：旭川">
+            </div>
           </div>
           <button class="secondary-button wide-action" type="button" id="saveHistory">履歴に保存</button>
         </fieldset>
@@ -559,7 +585,9 @@
             </select>
           </div>
         </fieldset>
+      </section>
 
+      <section id="history">
         <fieldset>
           <legend>履歴</legend>
           <div id="tripHistoryList"></div>
@@ -584,7 +612,7 @@
           </div>
           <div class="field">
             <span class="label">バージョン</span>
-            <span>PWA版 1.4</span>
+            <span>PWA版 1.5</span>
           </div>
         </article>
       </section>
