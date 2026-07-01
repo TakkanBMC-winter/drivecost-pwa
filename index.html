@@ -515,6 +515,10 @@
               <span class="unit">円</span>
             </div>
           </div>
+          <div class="field">
+            <span class="label">高速料金を往復計算</span>
+            <input id="highwayRoundTrip" type="checkbox">
+          </div>
           <button class="secondary-button wide-action" type="button" id="saveHistory">履歴に保存</button>
         </fieldset>
 
@@ -608,7 +612,7 @@
           </div>
           <div class="field">
             <span class="label">バージョン</span>
-            <span>PWA版 1.6</span>
+            <span>PWA版 1.7</span>
           </div>
         </article>
       </section>
@@ -640,6 +644,7 @@
       distance: 50,
       roundTrip: true,
       highwayFee: 0,
+      highwayRoundTrip: false,
       enabledSplitCostItems: [],
       splitCosts: {
         lodging: 0,
@@ -666,6 +671,7 @@
       distance: $("distance"),
       roundTrip: $("roundTrip"),
       highwayFee: $("highwayFee"),
+      highwayRoundTrip: $("highwayRoundTrip"),
       driverDiscount: $("driverDiscount"),
       rounding: $("rounding")
     };
@@ -721,10 +727,11 @@
       const fuelEconomy = Math.max(state.fuelEconomy, 0.1);
       const people = Math.max(state.people, 1);
       const fuelCost = totalDistance / fuelEconomy * Math.max(state.fuelPrice, 0);
+      const highwayCost = Math.max(state.highwayFee, 0) * (state.highwayRoundTrip ? 2 : 1);
       const splitCostTotal = state.enabledSplitCostItems.reduce((sum, id) => {
         return sum + Math.max(numberValue(state.splitCosts[id]), 0);
       }, 0);
-      const totalCost = Math.max(fuelCost + Math.max(state.highwayFee, 0) + splitCostTotal, 0);
+      const totalCost = Math.max(fuelCost + highwayCost + splitCostTotal, 0);
       const normalCost = totalCost / people;
 
       if (people === 1) {
@@ -774,6 +781,7 @@
       controls.distance.value = state.distance;
       controls.roundTrip.checked = state.roundTrip;
       controls.highwayFee.value = state.highwayFee;
+      controls.highwayRoundTrip.checked = state.highwayRoundTrip;
       controls.driverDiscount.value = state.driverDiscount;
       controls.rounding.value = state.rounding;
       $("peopleOutput").textContent = `${state.people}人`;
@@ -903,7 +911,7 @@
         } else if (key === "fuelType") {
           state.fuelType = control.value;
           syncAveragePrice();
-        } else if (key === "useAveragePrice" || key === "roundTrip") {
+        } else if (key === "useAveragePrice" || key === "roundTrip" || key === "highwayRoundTrip") {
           state[key] = control.checked;
           syncAveragePrice();
         } else {
@@ -969,6 +977,7 @@
         roundTrip: state.roundTrip,
         totalDistance: totalDrivingDistance(),
         highwayFee: state.highwayFee,
+        highwayRoundTrip: state.highwayRoundTrip,
         fuelEconomy: state.fuelEconomy,
         fuelType: state.fuelType,
         fuelPrice: state.fuelPrice,
@@ -1015,6 +1024,7 @@
       state.startPlace = entry.startPlace || "";
       state.destinationPlace = entry.destinationPlace || "";
       state.roundTrip = typeof entry.roundTrip === "boolean" ? entry.roundTrip : false;
+      state.highwayRoundTrip = typeof entry.highwayRoundTrip === "boolean" ? entry.highwayRoundTrip : false;
       state.distance = numberValue(
         entry.distance,
         state.roundTrip ? numberValue(entry.totalDistance) / 2 : numberValue(entry.totalDistance)
