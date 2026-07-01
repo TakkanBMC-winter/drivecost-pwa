@@ -612,7 +612,7 @@
           </div>
           <div class="field">
             <span class="label">バージョン</span>
-            <span>PWA版 1.7</span>
+            <span>PWA版 1.8</span>
           </div>
         </article>
       </section>
@@ -949,10 +949,7 @@
 
     document.querySelectorAll(".tab-button").forEach((button) => {
       button.addEventListener("click", () => {
-        document.querySelectorAll(".tab-button").forEach((item) => item.setAttribute("aria-selected", "false"));
-        document.querySelectorAll("main > section").forEach((section) => section.classList.remove("active"));
-        button.setAttribute("aria-selected", "true");
-        $(button.dataset.tab).classList.add("active");
+        switchTab(button.dataset.tab);
       });
     });
 
@@ -1049,7 +1046,17 @@
       }
 
       render();
+      switchTab("home");
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function switchTab(tabID) {
+      document.querySelectorAll(".tab-button").forEach((item) => {
+        item.setAttribute("aria-selected", item.dataset.tab === tabID ? "true" : "false");
+      });
+      document.querySelectorAll("main > section").forEach((section) => {
+        section.classList.toggle("active", section.id === tabID);
+      });
     }
 
     function createId(prefix) {
